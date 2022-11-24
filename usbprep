@@ -1,0 +1,39 @@
+void Main()
+{
+	//Prepare the Disk
+	var driveList = DriveInfo.GetDrives();
+	
+	var removableDrives = driveList.Where(d => d.DriveType == DriveType.Removable);
+
+	Process.GetCurrentProcess().Id.Dump();
+	
+	var actionList = new List<Action>();
+	
+	foreach (var removableDrive in removableDrives) {
+		actionList.Add(() => PrepapretheDrive(removableDrive.Name));
+	}
+	
+	Parallel.Invoke(actionList.ToArray());
+	
+}
+
+public bool PrepapretheDrive(string driveLetter)
+{
+	var frmPull = new FrmImagePull();
+
+
+	Directory.SetCurrentDirectory(@"C:\Program Files (x86)\Wyse\USB Firmware Tool");
+
+	//Format the USB	
+	frmPull.DestDrive = driveLetter;
+	//Utility.FormatUSBKey(frmPull.ImgDataDrvDest, EArchTypeSelected.X64);
+	frmPull.ImgDataDrvDest.Dump();
+
+	//Prepare USB
+	var prepUsbObj = new PrepareUSB(frmPull.ImgDataDrvDest, true, true, true);
+	prepUsbObj.SourceDirPath = @"C:\Program Files (x86)\Wyse\USB Firmware Tool";
+	var wloaderSuccess = prepUsbObj.CopyWLoaderFiles();
+	var copyFilesSuccess =  prepUsbObj.CopyFiles(true);
+	
+	 return wloaderSuccess && copyFilesSuccess;
+}
